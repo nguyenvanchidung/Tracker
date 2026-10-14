@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Master Timeline Tracker</title>
+<style>
+:root{--bg:#fff;--soft:#f4f5f7;--line:#e2e5ea;--ink:#1f2a37;--mute:#6b7280;--acc:#0a7a3d;--accbg:#e4f3ea}
+@media (prefers-color-scheme:dark){:root{--bg:#14181d;--soft:#1d232a;--line:#2d353e;--ink:#e6e9ee;--mute:#98a2b0;--acc:#3ecf7a;--accbg:#1b3327}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+h1{font-size:18px;margin:0 0 2px}.sub{color:var(--mute);font-size:12px;margin-bottom:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sp{flex:1}.demo{background:var(--accbg);color:var(--acc);padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:10px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.tl{min-width:1100px}
+.r{display:flex;border-bottom:1px solid var(--line)}
+.lab{flex:0 0 190px;padding:6px 10px;position:sticky;left:0;background:var(--bg);z-index:2;border-right:1px solid var(--line);font-size:13px}
+.ch{background:var(--soft);font-weight:600}.ch .lab{background:var(--soft);color:var(--acc)}
+.trk{flex:1;position:relative}.hd .trk{height:40px}
+.mo{position:absolute;top:0;height:20px;border-left:1px solid var(--line);padding-left:4px;font-size:11px;font-weight:600}
+.wk{position:absolute;top:20px;font-size:10px;color:var(--mute);border-left:1px solid var(--line);height:20px;padding-left:3px}
+.grid{background-image:linear-gradient(to right,var(--line) 1px,transparent 1px)}
+.today{position:absolute;top:0;bottom:0;width:2px;background:var(--acc);z-index:1;opacity:.6}
+.mk{position:absolute;height:20px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:20px}
+.mk:before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;background:var(--ink)}
+.mk.m{color:var(--acc);font-weight:600}.mk.m:before{background:var(--acc);transform:rotate(45deg)}
+.done{opacity:.4;text-decoration:line-through}.risk{font-weight:700}
+.cal-t{font-weight:600;min-width:150px;text-align:center}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.cal.d1{grid-template-columns:1fr}
+.dh{background:var(--soft);padding:4px 6px;font-size:11px;font-weight:600;text-align:center;border-bottom:1px solid var(--line)}
+.c{min-height:96px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px;min-width:0}
+.cal.w .c,.cal.d1 .c{min-height:260px}
+.c.out{background:var(--soft);opacity:.6}.c .n{font-size:11px;color:var(--mute);margin-bottom:2px}
+.c.td .n{color:var(--acc);font-weight:700}
+.chip{font-size:11px;padding:1px 5px;margin-bottom:2px;border:1px solid var(--ink);border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.m{border-color:var(--acc);background:var(--accbg);color:var(--acc);font-weight:600}
+.tag{color:var(--mute);font-size:10px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px}th{background:var(--soft);font-size:12px}
+.msg{padding:24px;text-align:center;color:var(--mute)}
+.form{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+.form input[name=title],.form input[name=notes]{flex:1 1 150px}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+td input,td select{width:100%;min-width:90px;padding:3px 5px;font-size:12px}
+.x{border:0;color:var(--mute);padding:2px 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Master Timeline Tracker</h1>
+<div class="sub"><span id="md">Chế độ chỉ xem</span> · <span id="upd"></span></div>
+<div id="adm"></div>
+<datalist id="chl"><option>OOH</option><option>Social Listening</option><option>Social KOL</option><option>Sponsorship</option></datalist><datalist id="wsl"></datalist>
+<div id="demo" class="demo" style="display:none">Đang hiển thị dữ liệu demo. Dán SUPABASE_URL và SUPABASE_KEY ở đầu đoạn script để kết nối database.</div>
+<div class="bar">
+<button data-v="timeline" class="on">Timeline</button><button data-v="calendar">Calendar</button><button data-v="list">Danh sách</button>
+<span class="sp"></span><select id="fch"></select><select id="fws"></select>
+</div>
+<div id="out"><div class="msg">Đang tải…</div></div>
+</div>
+<script>
+// ===== DÁN 2 GIÁ TRỊ NÀY (Supabase > Project Settings > API). Chỉ dùng anon/publishable key, KHÔNG dùng service_role/secret =====
+const SUPABASE_URL='https://yvmjbizvkpdjfsgymqto.supabase.co';
+const SUPABASE_KEY='sb_publishable_1x6s2C_tLoIntNMN2Ld5Fg_iAu0kwAX';
+// ==============================================================================================================================
+const PRE=['OOH','Social Listening','Social KOL','Sponsorship'];
+const VN=['T2','T3','T4','T5','T6','T7','CN'];
+const q=(c,w,type,title,item_date,status='Not started')=>({channel:c,workstream:w,type,title,item_date,status,owner:'',notes:''});
+const DEMO=[
+q('OOH','OOH Annual Plan','Action','Finalize plan','2026-10-23','In progress'),q('OOH','OOH Annual Plan','Milestone','Present to MD','2026-10-28'),
+q('OOH','Tet campaign','Action','Site booking','2026-11-27'),q('OOH','Tet campaign','Milestone','Campaign live','2026-12-15'),
+q('Social Listening','Monthly report','Action','Nov report','2026-11-06'),q('Social Listening','Monthly report','Action','Dec report','2026-12-05'),
+q('Social Listening','Monthly report','Milestone','Q4 insight deck','2026-12-18'),
+q('Social KOL','DWOM 2026','Action','Agency brief','2026-10-21','In progress'),q('Social KOL','DWOM 2026','Action','KOL shortlist','2026-11-05'),
+q('Social KOL','DWOM 2026','Milestone','Content go-live','2026-11-20'),q('Social KOL','DWOM 2026','Action','Wrap-up report','2026-12-18'),
+q('Sponsorship','AP26 Sponsorship','Action','Draft brief','2026-10-30'),q('Sponsorship','AP26 Sponsorship','Action','Proposal review','2026-11-13'),
+q('Sponsorship','AP26 Sponsorship','Milestone','Contract signed','2026-11-30')];
+let items=[],view='timeline',mode='month',cur=new Date(),fch='all',fws='all';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const D=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c,12)};
+const S=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const mon=d=>add(d,-((d.getDay()+6)%7));
+const diff=(a,b)=>Math.round((b-a)/864e5);
+const today=S(new Date());
+const ADMIN=new URLSearchParams(location.search).has('admin');
+const ST=['Not started','In progress','Done','At risk'];
+let TOKEN=null,admFor=null;
+const base=()=>SUPABASE_URL.replace(/\/$/,'');
+const clearTok=()=>{TOKEN=null;try{sessionStorage.removeItem('tk')}catch(_){}};
+async function api(path,opt={}){
+ const r=await fetch(base()+'/rest/v1/'+path,{...opt,headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=representation',...(TOKEN?{Authorization:'Bearer '+TOKEN}:{})}});
+ if(r.status===401&&TOKEN){clearTok();adm(true);throw new Error('Phiên đăng nhập hết hạn, hãy đăng nhập lại')}
+ if(!r.ok)throw new Error('HTTP '+r.status+' '+await r.text());
+ return r.status===204?null:r.json()}
+async function loadData(){
+ try{items=await api('tracker_items?select=*&order=item_date.asc')}
+ catch(e){if(!TOKEN&&/hết hạn/.test(e.message))items=await api('tracker_items?select=*&order=item_date.asc');else throw e}}
+async function login(email,pw){
+ const r=await fetch(base()+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+ const j=await r.json();if(!r.ok)throw new Error(j.error_description||j.msg||'Đăng nhập lỗi');
+ TOKEN=j.access_token;try{sessionStorage.setItem('tk',TOKEN)}catch(_){}}
+const opts=a=>a.map(x=>`<option>${x}</option>`).join('');
+function adm(force){
+ if(!ADMIN)return;const k=!!TOKEN;if(!force&&admFor===k)return;admFor=k;
+ $('#md').textContent=k?'Chế độ admin':'Chế độ chỉ xem';
+ if(!SUPABASE_URL||!SUPABASE_KEY){$('#adm').innerHTML='<div class="demo">Cần điền SUPABASE_URL và SUPABASE_KEY trước khi dùng chế độ admin.</div>';return}
+ $('#adm').innerHTML=k?`<form id="af" class="form"><input name="channel" list="chl" placeholder="Channel" required><input name="ws" list="wsl" placeholder="Workstream" required><select name="type">${opts(['Action','Milestone'])}</select><input name="title" placeholder="Tên milestone / action" required><input type="date" name="date" required><input name="owner" placeholder="Owner"><select name="status">${opts(ST)}</select><input name="notes" placeholder="Notes"><button class="pri">+ Thêm</button><button type="button" id="lo">Đăng xuất</button></form><div class="sub">Sửa hoặc xóa item ở tab Danh sách.</div>`
+ :'<form id="lg" class="form"><input name="e" type="email" placeholder="Email admin" required><input name="p" type="password" placeholder="Mật khẩu" required><button class="pri">Đăng nhập</button></form>'}
+const cls=i=>(i.status==='Done'?'done ':'')+(i.status==='At risk'?'risk':'');
+const tip=i=>esc([i.channel,i.workstream,i.item_date,i.status,i.owner,i.notes].filter(Boolean).join(' · '));
+const chans=()=>[...PRE.filter(c=>items.some(i=>i.channel===c)),...new Set(items.map(i=>i.channel).filter(c=>!PRE.includes(c)))];
+const vis=()=>items.filter(i=>(fch==='all'||i.channel===fch)&&(fws==='all'||i.workstream===fws));
+
+function fill(){
+ $('#fch').innerHTML='<option value="all">Tất cả channel</option>'+chans().map(c=>`<option ${c===fch?'selected':''}>${esc(c)}</option>`).join('');
+ const w=[...new Set(items.filter(i=>fch==='all'||i.channel===fch).map(i=>i.workstream))];
+ if(fws!=='all'&&!w.includes(fws))fws='all';
+ $('#wsl').innerHTML=[...new Set(items.map(i=>i.workstream))].map(x=>`<option value="${esc(x)}">`).join('');
+ $('#fws').innerHTML='<option value="all">Tất cả workstream</option>'+w.map(x=>`<option ${x===fws?'selected':''}>${esc(x)}</option>`).join('')}
+
+function timeline(){
+ const ds=items.map(i=>D(i.item_date)),a=mon(new Date(Math.min(...ds))),e=new Date(Math.max(...ds));
+ const W=Math.max(13,Math.ceil((diff(a,e)+8)/7)),total=W*7,p=d=>diff(a,d)/total*100,end=add(a,total-1);
+ let h='<div class="scroll"><div class="tl"><div class="r hd"><div class="lab"><b>Channel / Workstream</b></div><div class="trk">';
+ for(let m=new Date(a.getFullYear(),a.getMonth(),1,12);m<=end;m=new Date(m.getFullYear(),m.getMonth()+1,1,12))h+=`<div class="mo" style="left:${Math.max(0,p(m))}%">Tháng ${m.getMonth()+1}</div>`;
+ for(let w=0;w<W;w++){const d=add(a,w*7);h+=`<div class="wk" style="left:${p(d)}%;width:${700/total}%">${d.getDate()}/${d.getMonth()+1}</div>`}
+ h+='</div></div>';const v=vis();
+ chans().filter(c=>v.some(i=>i.channel===c)).forEach(c=>{
+  h+=`<div class="r ch"><div class="lab">${esc(c)}</div><div class="trk"></div></div>`;
+  [...new Set(v.filter(i=>i.channel===c).map(i=>i.workstream))].forEach(w=>{
+   const its=v.filter(i=>i.channel===c&&i.workstream===w).sort((x,y)=>x.item_date<y.item_date?-1:1),lanes=[];
+   const pos=its.map(i=>{const d=D(i.item_date);let l=lanes.findIndex(x=>x<=d);const nx=add(d,12);if(l<0){l=lanes.length;lanes.push(nx)}else lanes[l]=nx;return[i,l,d]});
+   h+=`<div class="r"><div class="lab">${esc(w)}</div><div class="trk grid" style="height:${lanes.length*24+8}px;background-size:${100/W}% 100%">`;
+   if(today>=S(a)&&today<=S(end))h+=`<div class="today" style="left:${p(D(today))}%"></div>`;
+   pos.forEach(([i,l,d])=>h+=`<div class="mk ${i.type==='Milestone'?'m':''} ${cls(i)}" style="left:${p(d)}%;top:${4+l*24}px;max-width:${12/total*100}%" title="${tip(i)}">${esc(i.title)}</div>`);
+   h+='</div></div>'})});
+ return h+'</div></div>'}
+
+function calendar(){
+ let days,title,k='';
+ if(mode==='month'){const f=new Date(cur.getFullYear(),cur.getMonth(),1,12),l=new Date(cur.getFullYear(),cur.getMonth()+1,0,12);days=[];for(let d=mon(f);d<=l||days.length%7;d=add(d,1))days.push(d);title=`Tháng ${cur.getMonth()+1}/${cur.getFullYear()}`}
+ else if(mode==='week'){const s=mon(cur);days=[...Array(7)].map((_,i)=>add(s,i));k='w';title=`${S(days[0]).slice(5)} → ${S(days[6]).slice(5)}`}
+ else{days=[cur];k='d1';title=S(cur)}
+ const v=vis();
+ let h='<div class="bar"><button data-n="-1">‹</button><span class="cal-t">'+title+'</span><button data-n="1">›</button><button data-n="0">Hôm nay</button><span class="sp"></span>'+
+ ['month','week','day'].map(m=>`<button data-m="${m}" class="${m===mode?'on':''}">${{month:'Tháng',week:'Tuần',day:'Ngày'}[m]}</button>`).join('')+`</div><div class="cal ${k}">`;
+ if(mode!=='day')h+=VN.map(x=>`<div class="dh">${x}</div>`).join('');
+ days.forEach(d=>{const s=S(d);
+  h+=`<div class="c ${mode==='month'&&d.getMonth()!==cur.getMonth()?'out':''} ${s===today?'td':''}"><div class="n">${d.getDate()}</div>`+
+  v.filter(i=>i.item_date===s).map(i=>`<div class="chip ${i.type==='Milestone'?'m':''} ${cls(i)}" title="${tip(i)}">${i.type==='Milestone'?'◆ ':''}${esc(i.title)}${mode!=='month'?` <span class="tag">${esc(i.channel)}</span>`:''}</div>`).join('')+'</div>'});
+ return h+'</div>'}
+
+function list(){
+ const o=chans(),A=!!TOKEN,v=vis().sort((a,b)=>o.indexOf(a.channel)-o.indexOf(b.channel)||a.workstream.localeCompare(b.workstream)||(a.item_date<b.item_date?-1:1));
+ const inp=(i,f,t='text')=>`<input type="${t}" value="${esc(i[f])}" data-id="${i.id}" data-f="${f}">`;
+ const sel=(i,f,a)=>`<select data-id="${i.id}" data-f="${f}">${a.map(x=>`<option ${x===i[f]?'selected':''}>${x}</option>`).join('')}</select>`;
+ return '<div class="scroll"><table><tr><th>Channel</th><th>Workstream</th><th>Loại</th><th>Tên</th><th>Ngày</th><th>Owner</th><th>Status</th><th>Notes</th>'+(A?'<th></th>':'')+'</tr>'+
+ v.map(i=>A?`<tr><td>${inp(i,'channel')}</td><td>${inp(i,'workstream')}</td><td>${sel(i,'type',['Action','Milestone'])}</td><td>${inp(i,'title')}</td><td>${inp(i,'item_date','date')}</td><td>${inp(i,'owner')}</td><td>${sel(i,'status',ST)}</td><td>${inp(i,'notes')}</td><td><button class="x" data-del="${i.id}">✕</button></td></tr>`
+ :`<tr class="${cls(i)}"><td>${esc(i.channel)}</td><td>${esc(i.workstream)}</td><td>${i.type==='Milestone'?'◆ Milestone':'Action'}</td><td>${esc(i.title)}</td><td>${i.item_date}</td><td>${esc(i.owner)}</td><td>${esc(i.status)}</td><td>${esc(i.notes)}</td></tr>`).join('')+'</table></div>'}
+
+function render(){
+ adm();
+ document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+ if(!items.length){$('#out').innerHTML='<div class="msg">Chưa có dữ liệu.</div>';return}
+ fill();$('#out').innerHTML={timeline,calendar,list}[view]()}
+
+document.addEventListener('click',e=>{const g=a=>e.target.closest('['+a+']');
+ if(g('data-v')){view=g('data-v').dataset.v;render()}
+ else if(g('data-m')){mode=g('data-m').dataset.m;render()}
+ else if(g('data-n')){const n=+g('data-n').dataset.n;
+  if(!n)cur=new Date();else if(mode==='month')cur=new Date(cur.getFullYear(),cur.getMonth()+n,1,12);else cur=add(cur,n*(mode==='week'?7:1));render()}});
+$('#fch').onchange=e=>{fch=e.target.value;fws='all';render()};
+$('#fws').onchange=e=>{fws=e.target.value;render()};
+
+document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;
+ try{
+  if(f.id==='lg'){await login(f.e.value,f.p.value);adm(true);await loadData();render()}
+  else if(f.id==='af'){
+   const row={channel:f.channel.value.trim(),workstream:f.ws.value.trim(),type:f.type.value,title:f.title.value.trim(),item_date:f.date.value,owner:f.owner.value.trim(),status:f.status.value,notes:f.notes.value.trim()};
+   const r=await api('tracker_items',{method:'POST',body:JSON.stringify(row)});items.push(...r);f.title.value=f.notes.value='';render()}
+ }catch(err){alert(err.message)}});
+document.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.f)return;
+ const i=items.find(x=>x.id==t.dataset.id),old=i[t.dataset.f];
+ try{const r=await api('tracker_items?id=eq.'+i.id,{method:'PATCH',body:JSON.stringify({[t.dataset.f]:t.value})});Object.assign(i,r[0]);render()}
+ catch(err){alert(err.message);t.value=old}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-del],#lo');if(!b)return;
+ if(b.id==='lo'){clearTok();adm(true);try{await loadData()}catch(_){}render();return}
+ if(!confirm('Xóa item này?'))return;
+ try{await api('tracker_items?id=eq.'+b.dataset.del,{method:'DELETE'});items=items.filter(x=>x.id!=b.dataset.del);render()}catch(err){alert(err.message)}});
+
+(async()=>{
+ try{
+  if(ADMIN)try{TOKEN=sessionStorage.getItem('tk')}catch(_){}
+  if(!SUPABASE_URL||!SUPABASE_KEY){items=DEMO;$('#demo').style.display='block'}
+  else await loadData();
+  $('#upd').textContent='cập nhật khi tải trang '+new Date().toLocaleString('vi-VN');
+ }catch(err){$('#out').innerHTML='<div class="msg">Không tải được dữ liệu ('+esc(err.message)+'). Kiểm tra lại URL, key và policy đọc.</div>';adm(true);return}
+ render()})();
+</script>
+</body>
+</html>
